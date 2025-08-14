@@ -47,6 +47,7 @@ struct Entry {
 // - [x] Add +/- to the delta. - is already there, but I need to add + when it is positive.
 // - [x] Move secret and URL to a config file or env variable.
 // - [ ] Figure out why the LSP is struggling so much! Watch the YT video I found.
+// - [ ] Figure out why Neoformat does not work with rustfmt.
 // - [ ] Store when the last entry was fetched, and do not re-run until a certain duration has passed (i.e. 5 minutes).
 // - [ ] Add "stale" class, with its own colour.
 
