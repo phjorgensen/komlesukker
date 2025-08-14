@@ -42,14 +42,17 @@ struct Entry {
 }
 
 // TODO:
-// - [x] Add time since last update.
+// - [-] Figure out why the LSP is struggling so much! Watch the YT video I found.
+// - [ ] Figure out why Neoformat does not work with rustfmt.
 // - [ ] Format time since last update. At least readable, and in current time zone, but maybe "3 minutes ago".
+// - [ ] Store when the last entry was fetched, and do not re-run until a certain duration has passed (i.e. 5 minutes).
+// - [ ] Store some temporary state, to handle arguments passed in, like a "privacy-mode", which would have to keep track of on/off state.
+//      - It could also fix the previous point, by storing when the last API call was run.
+// - [ ] Add "stale" class, with its own colour.
+// - [ ] Click on the module could open the URL in a browser window?
+// - [x] Add time since last update.
 // - [x] Add +/- to the delta. - is already there, but I need to add + when it is positive.
 // - [x] Move secret and URL to a config file or env variable.
-// - [ ] Figure out why the LSP is struggling so much! Watch the YT video I found.
-// - [ ] Figure out why Neoformat does not work with rustfmt.
-// - [ ] Store when the last entry was fetched, and do not re-run until a certain duration has passed (i.e. 5 minutes).
-// - [ ] Add "stale" class, with its own colour.
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
