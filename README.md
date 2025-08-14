@@ -4,23 +4,42 @@ The plan for this project is to create a CLI that can read from the Nightscout A
 
 For now, you can build the package and call the binary in the Waybar module as specified below.
 
-## Build
+## With NixOS
+
+You can just add this flake as an input to your config flake, and add the package.
+
+```nix
+inputs = {
+  komlesukker = {
+    url = "github:phjorgensen/komlesukker";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+};
+
+# In some module
+environment.systemPackages = [
+  inputs.komlesukker.packages.${system}.default
+];
+```
+
+## Build without NixOS
 
 Clone the repo and run:
+
 ```bash
 cargo b --release
 ```
 
-## Waybar module
+Add the `komlesukker` binary somewhere in the PATH.
 
-I've put my binary in `~/.config/waybar/scripts/komlesukker`. If you put it somewhere else, you need to update the paths in the Waybar module.
+## Waybar module
 
 ```json
 "custom/bs": {
   "return-type": "json",
-  "exec-if": "which ~/.config/waybar/scripts/komlesukker",
-  "exec": "~/.config/waybar/scripts/komlesukker",
-  "on-click": "~/.config/waybar/scripts/komlesukker",
+  "exec-if": "which komlesukker",
+  "exec": "komlesukker",
+  "on-click": "komlesukker",
   "escape": false,
   "tooltip": true,
   "interval": 60,
