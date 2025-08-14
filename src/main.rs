@@ -1,5 +1,6 @@
+use chrono::{DateTime, Local};
 use reqwest::{Client, Error};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::{self, Write};
 
@@ -37,27 +38,29 @@ struct Entry {
     #[serde(rename = "sysTime")]
     sys_time: String,
     #[serde(rename = "utcOffset")]
-    utc_offset:i32,
-    mills:isize,
+    utc_offset: i32,
+    mills: isize,
 }
 
 // TODO:
-// - [-] Figure out why the LSP is struggling so much! Watch the YT video I found.
-// - [ ] Figure out why Neoformat does not work with rustfmt.
-// - [ ] Format time since last update. At least readable, and in current time zone, but maybe "3 minutes ago".
-// - [ ] Store when the last entry was fetched, and do not re-run until a certain duration has passed (i.e. 5 minutes).
 // - [ ] Store some temporary state, to handle arguments passed in, like a "privacy-mode", which would have to keep track of on/off state.
-//      - It could also fix the previous point, by storing when the last API call was run.
 // - [ ] Add "stale" class, with its own colour.
 // - [ ] Click on the module could open the URL in a browser window?
+// - [x] Format time since last update. At least readable, and in current time zone, but maybe "3 minutes ago".
 // - [x] Add time since last update.
 // - [x] Add +/- to the delta. - is already there, but I need to add + when it is positive.
 // - [x] Move secret and URL to a config file or env variable.
+// - [x] Figure out why the LSP is struggling so much! Watch the YT video I found.
+// - [x] Figure out why Neoformat does not work with rustfmt.
+//      - Didn't figure it out, but i changed it with native formatting, and now it works.
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let config = get_config();
-    let url = format!("https://{}@{}/api/v1/entries/sgv?count=1", config.secret, config.url);
+    let url = format!(
+        "https://{}@{}/api/v1/entries/sgv?count=1",
+        config.secret, config.url
+    );
 
     let client = Client::new();
 
@@ -70,20 +73,22 @@ async fn main() -> Result<(), Error> {
         .await?;
 
     match entries.get(0) {
-        Some(entry) =>{
+        Some(entry) => {
             let sgv = mgdl_to_mmol(entry.sgv);
             let delta = format_delta(mgdl_to_mmol(entry.delta));
 
             let text = format!("{sgv:.1} ({delta})");
-            let time = entry.date_string.clone();
+            let time = format_time(entry.date_string.clone());
             let class = get_class(sgv, config);
 
-            let out = format!("{{ \"text\": \"{text}\", \"tooltip\": \"{time}\", \"class\": \"{class}\" }}");
+            let out = format!(
+                "{{ \"text\": \"{text}\", \"tooltip\": \"{time}\", \"class\": \"{class}\" }}"
+            );
 
             let stdout = io::stdout();
             let mut handle = stdout.lock();
             handle.write_all(out.as_bytes()).unwrap();
-        },
+        }
         None => println!("Could not find value"),
     };
 
@@ -102,6 +107,13 @@ fn format_delta(delta: f64) -> String {
         format!("+{delta:.1}")
     } else {
         format!("{delta:.1}")
+    }
+}
+
+fn format_time(time: String) -> String {
+    match time.parse::<DateTime<Local>>() {
+        Ok(date_time) => date_time.format("%H:%M (%Y-%m-%d)").to_string(),
+        Err(_) => time,
     }
 }
 
