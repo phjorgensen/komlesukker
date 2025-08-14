@@ -5,8 +5,8 @@
 
   outputs =
     {
-      self,
       nixpkgs,
+      ...
     }:
     let
       system = "x86_64-linux";
@@ -23,6 +23,8 @@
           rust-analyzer
           rustfmt
           clippy
+
+          openssl
         ];
 
         nativeBuildInputs = with pkgs; [
