@@ -1,8 +1,11 @@
+mod nightscout;
 use chrono::{DateTime, Local};
-use reqwest::{Client, Error};
+use reqwest::Error;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::{self, Write};
+
+use crate::nightscout::Nightscout;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct KomlesukkerConfig {
@@ -19,29 +22,6 @@ struct Threshold {
     very_low: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct Entry {
-    _id: String,
-    device: String,
-    date: isize,
-    #[serde(rename = "dateString")]
-    date_string: String,
-    sgv: f64,
-    delta: f64,
-    direction: String,
-    #[serde(rename = "type")]
-    entry_type: String,
-    filtered: i32,
-    unfiltered: i32,
-    rssi: i32,
-    noise: i32,
-    #[serde(rename = "sysTime")]
-    sys_time: String,
-    #[serde(rename = "utcOffset")]
-    utc_offset: i32,
-    mills: isize,
-}
-
 // TODO:
 // - [ ] Store some temporary state, to handle arguments passed in, like a "privacy-mode", which would have to keep track of on/off state.
 // - [ ] Add "stale" class, with its own colour.
@@ -54,25 +34,16 @@ struct Entry {
 // - [x] Figure out why Neoformat does not work with rustfmt.
 //      - Didn't figure it out, but i changed it with native formatting, and now it works.
 
-#[tokio::main]
-async fn main() -> Result<(), Error> {
+fn main() -> Result<(), Error> {
     let config = get_config();
-    let url = format!(
-        "https://{}@{}/api/v1/entries/sgv?count=1",
-        config.secret, config.url
-    );
 
-    let client = Client::new();
+    let nightscout = Nightscout::new(config.url.clone(), config.secret.clone());
+    let latest = nightscout.get_latest()?;
 
-    let entries: Vec<Entry> = client
-        .get(url)
-        .header("accept", "application/json")
-        .send()
-        .await?
-        .json()
-        .await?;
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
 
-    match entries.get(0) {
+    match latest {
         Some(entry) => {
             let sgv = mgdl_to_mmol(entry.sgv);
             let delta = format_delta(mgdl_to_mmol(entry.delta));
@@ -85,11 +56,15 @@ async fn main() -> Result<(), Error> {
                 "{{ \"text\": \"{text}\", \"tooltip\": \"{time}\", \"class\": \"{class}\" }}"
             );
 
-            let stdout = io::stdout();
-            let mut handle = stdout.lock();
-            handle.write_all(out.as_bytes()).unwrap();
+            handle
+                .write_all(out.as_bytes())
+                .expect("Could not write to stdout");
         }
-        None => println!("Could not find value"),
+        None => {
+            handle
+                .write_all(b"{{ \"text\": \"No entry found\", \"class\": \"error\" }}")
+                .expect("Could not write to stdout");
+        }
     };
 
     return Ok(());
