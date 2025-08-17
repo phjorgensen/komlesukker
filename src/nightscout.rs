@@ -1,32 +1,11 @@
+pub mod entry;
+
+use crate::nightscout::entry::Entry;
 use reqwest::{Client, Error};
-use serde::{Deserialize, Serialize};
 
 pub struct Nightscout {
     client: Client,
     base_url: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Entry {
-    _id: String,
-    device: String,
-    date: isize,
-    #[serde(rename = "dateString")]
-    pub date_string: String,
-    pub sgv: f64,
-    pub delta: f64,
-    pub direction: String,
-    #[serde(rename = "type")]
-    entry_type: String,
-    filtered: i32,
-    unfiltered: i32,
-    rssi: i32,
-    noise: i32,
-    #[serde(rename = "sysTime")]
-    sys_time: String,
-    #[serde(rename = "utcOffset")]
-    utc_offset: i32,
-    mills: isize,
 }
 
 impl Nightscout {
@@ -37,9 +16,8 @@ impl Nightscout {
         }
     }
 
-    #[tokio::main]
-    pub async fn get_latest(&self) -> Result<Option<Entry>, Error> {
-        let url = format!("{}/entries/sgv?count=1", self.base_url,);
+    pub async fn get_entries(&self, count: u32) -> Result<Vec<Entry>, Error> {
+        let url = format!("{}/entries/sgv?count={count}", self.base_url,);
 
         let entries: Vec<Entry> = self
             .client
@@ -50,9 +28,13 @@ impl Nightscout {
             .json()
             .await?;
 
-        return match entries.get(0) {
+        return Ok(entries);
+    }
+
+    pub async fn get_latest(&self) -> Result<Option<Entry>, Error> {
+        match Nightscout::get_entries(&self, 1).await?.get(0) {
             Some(entry) => Ok(Some(entry.clone())),
             None => Ok(None),
-        };
+        }
     }
 }
