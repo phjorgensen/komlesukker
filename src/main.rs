@@ -30,7 +30,7 @@ async fn main() -> Result<(), Error> {
     let mut handle = stdout.lock();
 
     if args.privacy {
-        let out = "{{ \"text\": \"-.- (-.-)\", \"tooltip\": \"Privacy mode is turned on\", \"class\": \"privacy\" }}";
+        let out = "{ \"text\": \"-.- (-.-)\", \"tooltip\": \"Privacy mode is turned on\", \"class\": \"privacy\" }";
 
         handle
             .write_all(out.as_bytes())
