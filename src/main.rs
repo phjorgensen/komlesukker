@@ -10,9 +10,10 @@ use reqwest::Error;
 use std::io::{self, Write};
 
 // TODO:
-// - [ ] Store some temporary state, to handle arguments passed in, like a "privacy-mode", which would have to keep track of on/off state.
-// - [ ] Add "stale" class, with its own colour.
-// - [ ] Click on the module could open the URL in a browser window?
+// Store some temporary state, to handle arguments passed in, like a "privacy-mode", which would have to keep track of on/off state.
+// Add "stale" class, with its own colour.
+// Create a file that stores some info, like last measurement, settings, like privcy.
+// Add arrow icons.
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -20,26 +21,36 @@ struct Args {
     /// Privacy mode
     #[arg(short, long, default_value_t = false)]
     privacy: bool,
+
+    /// Open the URL in a browser window
+    #[arg(short, long, default_value_t = false)]
+    open_in_browser: bool,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let args = Args::parse();
-
     let stdout = io::stdout();
-    let mut handle = stdout.lock();
+    let config = KomlesukkerConfig::new();
+
+    if args.open_in_browser {
+        webbrowser::open(&format!("https://{}", config.get_url()))
+            .expect("Could not open the browser.");
+
+        return Ok(());
+    }
 
     if args.privacy {
         let out = "{ \"text\": \"-.- (-.-)\", \"tooltip\": \"Privacy mode is turned on\", \"class\": \"privacy\" }";
 
-        handle
+        stdout
+            .lock()
             .write_all(out.as_bytes())
             .expect("Could not write to stdout");
 
         return Ok(());
     }
 
-    let config = KomlesukkerConfig::new();
     let nightscout = Nightscout::new(config.get_url(), config.get_secret());
     let latest = nightscout.get_latest().await?;
 
@@ -57,12 +68,14 @@ async fn main() -> Result<(), Error> {
                 "{{ \"text\": \"{text}\", \"tooltip\": \"{measured_at}\", \"class\": \"{class}\" }}"
             );
 
-            handle
+            stdout
+                .lock()
                 .write_all(out.as_bytes())
                 .expect("Could not write to stdout");
         }
         None => {
-            handle
+            stdout
+                .lock()
                 .write_all(b"{{ \"text\": \"No entry found\", \"class\": \"error\" }}")
                 .expect("Could not write to stdout");
         }
