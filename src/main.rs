@@ -5,6 +5,7 @@ use crate::{
     komle_config::KomlesukkerConfig,
     nightscout::{Nightscout, entry::Unit},
 };
+use clap::Parser;
 use reqwest::Error;
 use std::io::{self, Write};
 
@@ -13,14 +14,34 @@ use std::io::{self, Write};
 // - [ ] Add "stale" class, with its own colour.
 // - [ ] Click on the module could open the URL in a browser window?
 
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Privacy mode
+    #[arg(short, long, default_value_t = false)]
+    privacy: bool,
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let config = KomlesukkerConfig::new();
-    let nightscout = Nightscout::new(config.get_url(), config.get_secret());
-    let latest = nightscout.get_latest().await?;
+    let args = Args::parse();
 
     let stdout = io::stdout();
     let mut handle = stdout.lock();
+
+    if args.privacy {
+        let out = "{{ \"text\": \"-.- (-.-)\", \"tooltip\": \"Privacy mode is turned on\", \"class\": \"privacy\" }}";
+
+        handle
+            .write_all(out.as_bytes())
+            .expect("Could not write to stdout");
+
+        return Ok(());
+    }
+
+    let config = KomlesukkerConfig::new();
+    let nightscout = Nightscout::new(config.get_url(), config.get_secret());
+    let latest = nightscout.get_latest().await?;
 
     match latest {
         Some(entry) => {
