@@ -20,14 +20,14 @@ impl KomlesukkerConfig {
     pub fn new() -> KomlesukkerConfig {
         let os_config_dir = dirs::config_dir().expect("Could not get the OS config directory.");
         let app_config = os_config_dir.join("komlesukker/config.json");
-        return KomlesukkerConfig::from(app_config);
+        KomlesukkerConfig::from(app_config)
     }
 
     pub fn from<T: AsRef<Path>>(config_path: T) -> KomlesukkerConfig {
         let config_content =
             fs::read(config_path).expect("Could not find the specified config file.");
-        return serde_json::from_slice(&config_content)
-            .expect("Could not parse the config content as JSON.");
+        serde_json::from_slice(&config_content)
+            .expect("Could not parse the config content as JSON.")
     }
 
     pub fn get_url(&self) -> String {

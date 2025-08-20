@@ -25,21 +25,21 @@ pub struct Entry {
 }
 
 pub enum Unit {
-    Mgdl,
+    // Mgdl,
     Mmol,
 }
 
 impl Entry {
     pub fn get_measurement(&self, unit: Unit) -> f64 {
         match unit {
-            Unit::Mgdl => self.sgv,
+            // Unit::Mgdl => self.sgv,
             Unit::Mmol => Entry::mgdl_to_mmol(self.sgv),
         }
     }
 
     pub fn get_delta(&self, unit: Unit) -> f64 {
         match unit {
-            Unit::Mgdl => self.delta,
+            // Unit::Mgdl => self.delta,
             Unit::Mmol => Entry::mgdl_to_mmol(self.delta),
         }
     }

@@ -12,7 +12,7 @@ impl Nightscout {
     pub fn new(url: String, secret: String) -> Nightscout {
         Nightscout {
             client: Client::new(),
-            base_url: format!("https://{}@{}/api/v1", secret, url),
+            base_url: format!("https://{secret}@{url}/api/v1"),
         }
     }
 
@@ -28,11 +28,11 @@ impl Nightscout {
             .json()
             .await?;
 
-        return Ok(entries);
+        Ok(entries)
     }
 
     pub async fn get_latest(&self) -> Result<Option<Entry>, Error> {
-        match Nightscout::get_entries(&self, 1).await?.get(0) {
+        match Nightscout::get_entries(self, 1).await?.first() {
             Some(entry) => Ok(Some(entry.clone())),
             None => Ok(None),
         }
